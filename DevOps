@@ -1,0 +1,458 @@
+
+Dell@DESKTOP-A7AVI7E MINGW64 ~
+$ cd Downloads/
+
+Dell@DESKTOP-A7AVI7E MINGW64 ~/Downloads
+$ ssh -i "08March.pem" ec2-user@3.133.135.16
+The authenticity of host '3.133.135.16 (3.133.135.16)' can't be established.
+ED25519 key fingerprint is SHA256:VNVZtQXIhSx46xSsMiXX+mF5wK1tIa/474M/WW66oiw.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '3.133.135.16' (ED25519) to the list of known hosts.
+Last login: Thu Mar 10 10:49:54 2022 from ec2-3-16-146-0.us-east-2.compute.amazonaws.com
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+No packages needed for security; 5 packages available
+Run "sudo yum update" to apply all updates.
+[ec2-user@ip-172-31-6-216 ~]$ sudo su -
+[root@ip-172-31-6-216 ~]# yum install git -y
+----------------------------------------
+installing
+
+Installed:
+  git.x86_64 0:2.32.0-1.amzn2.0.1
+
+Dependency Installed:
+  emacs-filesystem.noarch 1:27.2-4.amzn2.0.1
+  git-core.x86_64 0:2.32.0-1.amzn2.0.1
+  git-core-doc.noarch 0:2.32.0-1.amzn2.0.1
+  perl-Error.noarch 1:0.17020-2.amzn2
+  perl-Git.noarch 0:2.32.0-1.amzn2.0.1
+  perl-TermReadKey.x86_64 0:2.30-20.amzn2.0.2
+
+Complete!
+[root@ip-172-31-6-216 ~]# git --version
+git version 2.32.0
+[root@ip-172-31-6-216 ~]# 
+[root@ip-172-31-6-216 ~]# mkdir myfiles
+[root@ip-172-31-6-216 ~]# ls
+myfiles
+[root@ip-172-31-6-216 ~]# cd myfiles/
+[root@ip-172-31-6-216 myfiles]# ls
+[root@ip-172-31-6-216 myfiles]# touch index1.html
+[root@ip-172-31-6-216 myfiles]# ls
+index1.html
+[root@ip-172-31-6-216 myfiles]# ls -ltr
+total 0
+-rw-r--r-- 1 root root 0 Mar 10 11:08 index1.html
+[root@ip-172-31-6-216 myfiles]# touch index2.html
+[root@ip-172-31-6-216 myfiles]# ls
+index1.html  index2.html
+[root@ip-172-31-6-216 myfiles]# git init
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: is subject to change. To configure the initial branch name to use in all
+hint: of your new repositories, which will suppress this warning, call:
+hint:
+hint:   git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint:   git branch -m <name>
+Initialized empty Git repository in /root/myfiles/.git/
+[root@ip-172-31-6-216 myfiles]# ls -al
+total 0
+drwxr-xr-x 3 root root  56 Mar 10 11:10 .
+dr-xr-x--- 4 root root 118 Mar 10 11:08 ..
+drwxr-xr-x 7 root root 119 Mar 10 11:10 .git
+-rw-r--r-- 1 root root   0 Mar 10 11:08 index1.html
+-rw-r--r-- 1 root root   0 Mar 10 11:09 index2.html
+[root@ip-172-31-6-216 myfiles]# ls
+index1.html  index2.html
+[root@ip-172-31-6-216 myfiles]# ls -lrt
+total 0
+-rw-r--r-- 1 root root 0 Mar 10 11:08 index1.html
+-rw-r--r-- 1 root root 0 Mar 10 11:09 index2.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+
+No commits yet
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        index1.html
+        index2.html
+
+nothing added to commit but untracked files present (use "git add" to track)
+[root@ip-172-31-6-216 myfiles]# git add index1.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+        new file:   index1.html
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        index2.html
+
+[root@ip-172-31-6-216 myfiles]# git commit -m "file index1.html"
+[master (root-commit) d3786cf] file index1.html
+ Committer: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 index1.html
+[root@ip-172-31-6-216 myfiles]# git ls-files
+index1.html
+[root@ip-172-31-6-216 myfiles]# git *.html
+git: 'index1.html' is not a git command. See 'git --help'.
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        index2.html
+
+nothing added to commit but untracked files present (use "git add" to track)
+[root@ip-172-31-6-216 myfiles]# git add *.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   index2.html
+
+[root@ip-172-31-6-216 myfiles]# git commit -m "add file *.html"
+[master 3f24403] add file *.html
+ Committer: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 index2.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+nothing to commit, working tree clean
+[root@ip-172-31-6-216 myfiles]# git log
+commit 3f244036d5e133564625e7e797f6f4dd36061eed (HEAD -> master)
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 11:29:47 2022 +0000
+
+    add file *.html
+
+commit d3786cfd5673d57210b2727087d8dd5428d81c2b
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 11:25:35 2022 +0000
+
+    file index1.html
+[root@ip-172-31-6-216 myfiles]# git log --oneline
+3f24403 (HEAD -> master) add file *.html
+d3786cf file index1.html
+[root@ip-172-31-6-216 myfiles]# ls
+index1.html  index2.html
+[root@ip-172-31-6-216 myfiles]# ls -al
+total 0
+drwxr-xr-x 3 root root  56 Mar 10 11:10 .
+dr-xr-x--- 4 root root 118 Mar 10 11:08 ..
+drwxr-xr-x 8 root root 166 Mar 10 11:29 .git
+-rw-r--r-- 1 root root   0 Mar 10 11:08 index1.html
+-rw-r--r-- 1 root root   0 Mar 10 11:09 index2.html
+[root@ip-172-31-6-216 myfiles]# pwd
+/root/myfiles
+
+
+------------------------------------------------------------------------------
+
+
+Dell@DESKTOP-A7AVI7E MINGW64 ~
+$ cd Downloads/
+
+Dell@DESKTOP-A7AVI7E MINGW64 ~/Downloads
+$ ssh -i "08March.pem" ec2-user@3.133.135.16
+Last login: Thu Mar 10 10:59:35 2022 from 122.161.73.145
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+No packages needed for security; 5 packages available
+Run "sudo yum update" to apply all updates.
+[ec2-user@ip-172-31-6-216 ~]$ git status
+fatal: not a git repository (or any of the parent directories): .git
+[ec2-user@ip-172-31-6-216 ~]$ ls
+[ec2-user@ip-172-31-6-216 ~]$ sudo su -
+Last login: Thu Mar 10 11:02:26 UTC 2022 on pts/1
+[root@ip-172-31-6-216 ~]# ls
+myfiles
+[root@ip-172-31-6-216 ~]# git status
+fatal: not a git repository (or any of the parent directories): .git
+[root@ip-172-31-6-216 ~]# git --version
+git version 2.32.0
+[root@ip-172-31-6-216 ~]# touch index3.html
+[root@ip-172-31-6-216 ~]# git status
+fatal: not a git repository (or any of the parent directories): .git
+[root@ip-172-31-6-216 ~]# ls
+index3.html  myfiles
+[root@ip-172-31-6-216 ~]# rm index3.html
+rm: remove regular empty file ‘index3.html’? yes
+[root@ip-172-31-6-216 ~]# ls
+myfiles
+[root@ip-172-31-6-216 ~]# cd myfiles/
+[root@ip-172-31-6-216 myfiles]# touch index3.html
+[root@ip-172-31-6-216 myfiles]# ls
+index1.html  index2.html  index3.html
+[root@ip-172-31-6-216 myfiles]# git init
+Reinitialized existing Git repository in /root/myfiles/.git/
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        index3.html
+
+nothing added to commit but untracked files present (use "git add" to track)
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]# ls
+index1.html  index2.html  index3.html
+[root@ip-172-31-6-216 myfiles]# ls -al
+total 0
+drwxr-xr-x 3 root root  75 Mar 10 17:39 .
+dr-xr-x--- 4 root root 139 Mar 10 17:39 ..
+drwxr-xr-x 8 root root 166 Mar 10 17:40 .git
+-rw-r--r-- 1 root root   0 Mar 10 11:08 index1.html
+-rw-r--r-- 1 root root   0 Mar 10 11:09 index2.html
+-rw-r--r-- 1 root root   0 Mar 10 17:39 index3.html
+[root@ip-172-31-6-216 myfiles]# git add index3.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   index3.html
+
+[root@ip-172-31-6-216 myfiles]# git commit -m "file index3.html"
+[master 7c72b23] file index3.html
+ Committer: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 index3.html
+[root@ip-172-31-6-216 myfiles]# git ls-files
+index1.html
+index2.html
+index3.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+nothing to commit, working tree clean
+[root@ip-172-31-6-216 myfiles]# git log
+commit 7c72b236accd4c4d840c60e35c00f2128bfa0413 (HEAD -> master)
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 17:42:32 2022 +0000
+
+    file index3.html
+
+commit 3f244036d5e133564625e7e797f6f4dd36061eed
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 11:29:47 2022 +0000
+
+    add file *.html
+
+commit d3786cfd5673d57210b2727087d8dd5428d81c2b
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 11:25:35 2022 +0000
+
+    file index1.html
+[root@ip-172-31-6-216 myfiles]# git log --oneline
+7c72b23 (HEAD -> master) file index3.html
+3f24403 add file *.html
+d3786cf file index1.html
+[root@ip-172-31-6-216 myfiles]# git ls
+git: 'ls' is not a git command. See 'git --help'.
+
+The most similar command is
+        log
+[root@ip-172-31-6-216 myfiles]# git ls-files
+index1.html
+index2.html
+index3.html
+[root@ip-172-31-6-216 myfiles]# touch f1.file
+[root@ip-172-31-6-216 myfiles]# touch f2.file
+[root@ip-172-31-6-216 myfiles]# ls
+f1.file  f2.file  index1.html  index2.html  index3.html
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        f1.file
+        f2.file
+
+nothing added to commit but untracked files present (use "git add" to track)
+[root@ip-172-31-6-216 myfiles]# git add .
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   f1.file
+        new file:   f2.file
+
+[root@ip-172-31-6-216 myfiles]# commit -m "add file ."
+-bash: commit: command not found
+[root@ip-172-31-6-216 myfiles]# git ls-files
+f1.file
+f2.file
+index1.html
+index2.html
+index3.html
+[root@ip-172-31-6-216 myfiles]# commit -m "new file"
+-bash: commit: command not found
+[root@ip-172-31-6-216 myfiles]# commit -m "add new file"
+-bash: commit: command not found
+[root@ip-172-31-6-216 myfiles]# commit -m "add *.file"
+-bash: commit: command not found
+[root@ip-172-31-6-216 myfiles]# git commit -m "new file"
+[master 242fa4e] new file
+ Committer: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 2 files changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 f1.file
+ create mode 100644 f2.file
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+nothing to commit, working tree clean
+[root@ip-172-31-6-216 myfiles]# git config --global user.name swati5490
+[root@ip-172-31-6-216 myfiles]# git config --global user.email swaticrystal@gmail.com
+[root@ip-172-31-6-216 myfiles]# git config --list
+user.name=swati5490
+user.email=swaticrystal@gmail.com
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+[root@ip-172-31-6-216 myfiles]# git commit -m "new file"
+On branch master
+nothing to commit, working tree clean
+[root@ip-172-31-6-216 myfiles]# touch f3.file
+[root@ip-172-31-6-216 myfiles]# git add .
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   f3.file
+
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]# git commit -m "add new file"
+[master 066ac0c] add new file
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 f3.file
+[root@ip-172-31-6-216 myfiles]# touch f4.file
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]#
+[root@ip-172-31-6-216 myfiles]# git add .
+[root@ip-172-31-6-216 myfiles]# git staus
+git: 'staus' is not a git command. See 'git --help'.
+
+The most similar command is
+        status
+[root@ip-172-31-6-216 myfiles]# git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   f4.file
+
+[root@ip-172-31-6-216 myfiles]# git logs --oneline
+git: 'logs' is not a git command. See 'git --help'.
+
+The most similar command is
+        log
+[root@ip-172-31-6-216 myfiles]# git log --oneline
+066ac0c (HEAD -> master) add new file
+242fa4e new file
+7c72b23 file index3.html
+3f24403 add file *.html
+d3786cf file index1.html
+[root@ip-172-31-6-216 myfiles]# git commit -m "adding fine"
+[master f8a39de] adding fine
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 f4.file
+[root@ip-172-31-6-216 myfiles]# git log --oneline
+f8a39de (HEAD -> master) adding fine
+066ac0c add new file
+242fa4e new file
+7c72b23 file index3.html
+3f24403 add file *.html
+d3786cf file index1.html
+[root@ip-172-31-6-216 myfiles]# git log
+commit f8a39de830ac14ca26270d3edf8806097580bcc4 (HEAD -> master)
+Author: swati5490 <swaticrystal@gmail.com>
+Date:   Thu Mar 10 18:20:04 2022 +0000
+
+    adding fine
+
+commit 066ac0c41348ac1d6d68b026764bd02a2414708d
+Author: swati5490 <swaticrystal@gmail.com>
+Date:   Thu Mar 10 17:58:33 2022 +0000
+
+    add new file
+
+commit 242fa4ec742c467ff287f3127e9bbc59492a3eb5
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 17:52:45 2022 +0000
+
+    new file
+
+commit 7c72b236accd4c4d840c60e35c00f2128bfa0413
+Author: root <root@ip-172-31-6-216.us-east-2.compute.internal>
+Date:   Thu Mar 10 17:42:32 2022 +0000
+
+    file index3.html
+:
+-------------------------------------------------------------------
