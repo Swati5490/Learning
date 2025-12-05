@@ -1,0 +1,254 @@
+swati [ ~ ]$ cat values.yaml 
+# --------------------------------------------
+# ✅ Keycloak replicas & image
+# --------------------------------------------
+replicaCount: 1
+
+image:
+  repository: quay.io/keycloak/keycloak
+  tag: 25.0.2
+  pullPolicy: IfNotPresent
+
+# --------------------------------------------
+# ✅ Startup command
+# --------------------------------------------
+command:
+  - "/opt/keycloak/bin/kc.sh"
+  - "start"
+  - "--http-port=8080"
+  - "--http-relative-path=/auth"
+
+# --------------------------------------------
+# ✅ Admin credentials & environment
+# --------------------------------------------
+extraEnv: |-
+  - name: KEYCLOAK_ADMIN
+    value: "admin"
+  - name: KEYCLOAK_ADMIN_PASSWORD
+    value: "admin"
+  - name: KC_HTTP_RELATIVE_PATH
+    value: "/auth"
+  - name: KC_HTTP_ENABLED
+    value: "true"
+  - name: KC_PROXY
+    value: "edge"
+  - name: KC_HOSTNAME
+    value: "keycloak-staging.yuze.in"
+  - name: KC_HOSTNAME_STRICT
+    value: "false"
+  - name: KC_HOSTNAME_STRICT_HTTPS
+    value: "false"
+  - name: KC_CACHE
+    value: "local"
+  - name: KC_DB
+    value: "mssql"
+  - name: KC_DB_URL
+    value: "jdbc:sqlserver://sql-yuze-dev-cind.database.windows.net:1433;databaseName=keycloak_uat;encrypt=true;trustServerCertificate=true"
+  - name: KC_DB_URL_HOST
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-db-secret
+        key: db-host
+  - name: KC_DB_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-db-secret
+        key: db-username
+  - name: KC_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-db-secret
+        key: db-password
+  - name: KC_DB_DATABASE
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-db-secret
+        key: db-database
+  - name: KC_DB_UPDATE_CHECKSUMS
+    value: "true"
+  - name: KC_DB_VALIDATE_EXISTING
+    value: "false"
+  - name: JAVA_OPTS
+    value: "-Dkeycloak.migration.action=ignore-existing"
+  - name: KC_DB_URL_PROPERTIES
+    value: "encrypt=true;trustServerCertificate=true"
+  - name: KC_DB_URL_PORT
+    value: "1433"
+
+
+
+# --------------------------------------------
+# ✅ Service Configuration (internal ClusterIP)
+# --------------------------------------------
+service:
+  create: false
+
+# --------------------------------------------
+# ✅ Persistence (Azure SQL)
+# --------------------------------------------
+persistence:
+  enabled: true
+  dbVendor: mssql
+
+# --------------------------------------------
+# ✅ Resources
+# --------------------------------------------
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"
+
+# --------------------------------------------
+# ✅ Disable probes for now (optional)
+# --------------------------------------------
+livenessProbe: null
+readinessProbe: null
+startupProbe: null
+
+postgresql:
+  enabled: false
+
+extraVolumes: |
+  - name: keycloak-db-secret-vol
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: "keycloak-kv-provider"
+
+extraVolumeMounts: |
+  - name: keycloak-db-secret-vol
+    mountPath: "/mnt/secrets-store"
+    readOnly: true
+
+# --------------------------------------------
+# ✅ Extra Volumes and Volume Mounts for TLS
+# --------------------------------------------
+#extraVolumes: |
+#  - name: tls-secret
+#    secret:
+#      secretName: keycloak-staging-cert
+
+#extraVolumeMounts: |
+#  - name: tls-secret
+#    mountPath: /etc/x509/https
+#    readOnly: true
+
+# --------------------------------------------
+# ✅ Ingress to expose Keycloak externally
+# --------------------------------------------
+ingress:
+  enabled: false
+swati [ ~ ]$ 
+
+
+----------------------------------------------------------------------------------
+swati [ ~ ]$ cat secrertprovider.yaml
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: keycloak-kv-provider
+  namespace: keycloak
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"   # ✅ Using AKS Node’s VMSS Managed Identity
+    userAssignedIdentityID: c79f1d1b-66bf-412a-8969-61c610bd86e2  # UAI Client ID
+    keyvaultName: keycloak-vault-dev-cind
+    cloudName: ""
+    tenantId: 8877b0a7-6990-44f7-ae8d-ce81b87c248e
+    objects: |
+      array:
+        - |
+          objectName: db-host
+          objectType: secret
+        - |
+          objectName: db-username
+          objectType: secret
+        - |
+          objectName: db-password
+          objectType: secret
+        - |
+          objectName: db-database
+          objectType: secret
+    resourceGroup: RG-YUZE-DEV-CIND
+  secretObjects:
+  - secretName: keycloak-db-secret
+    type: Opaque
+    data:
+    - objectName: db-host
+      key: db-host
+    - objectName: db-username
+      key: db-username
+    - objectName: db-password
+      key: db-password
+    - objectName: db-database
+      key: db-database
+
+--------------------------------------------------------------------------
+swati [ ~ ]$  cat keycloak-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-ingress
+  namespace: keycloak
+  annotations:
+    ingressClassName: azure/application-gateway
+    # Backend communicates over HTTP
+    appgw.ingress.kubernetes.io/backend-protocol: "http"
+
+    # Health probe config
+    appgw.ingress.kubernetes.io/health-probe-path: "/auth/"
+    appgw.ingress.kubernetes.io/health-probe-hostname: "keycloak-staging.yuze.in"
+    appgw.ingress.kubernetes.io/health-probe-success-codes: "200-399"
+
+    # Redirect HTTP -> HTTPS
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+
+    # Backend path prefix
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/auth"
+
+spec:
+  ingressClassName: azure-application-gateway
+  tls:
+  - hosts:
+    - keycloak-staging.yuze.in
+    secretName: keycloak-tls-secret
+  rules:
+  - host: keycloak-staging.yuze.in
+    http:
+      paths:
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-https
+            port:
+              number: 443
+swati [ ~ ]$ cat keycloak-http-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-https
+  namespace: keycloak
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: keycloak
+    meta.helm.sh/release-namespace: keycloak
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: keycloak
+    app.kubernetes.io/name: keycloak
+  ports:
+    - name: https
+      port: 443        # service port
+      targetPort: 8080 # Keycloak pod port
+swati [ ~ ]$ 
+
+
