@@ -1,0 +1,346 @@
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY target/bing-api.jar app.jar
+EXPOSE 8096
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+how will devops engg write this or optimise this docker file?
+
+Great question 👌
+Developer ka Dockerfile kaam karta hai, DevOps ka Dockerfile production-grade hota hai.
+Let’s level this up step-by-step.
+
+1️⃣ Developer-written Dockerfile (yours 👇)
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY target/bing-api.jar app.jar
+EXPOSE 8096
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+✔️ What’s good
+
+JRE only (no full JDK) → smaller image
+
+Simple & readable
+
+Works fine for local / basic deployment
+
+❌ What’s missing (production POV)
+
+No non-root user (security risk)
+
+No JVM tuning (memory, GC)
+
+No health check
+
+No environment separation
+
+No signal handling / graceful shutdown
+
+No image hardening
+
+2️⃣ DevOps Engineer – Production Optimized Dockerfile
+
+This is how a DevOps engineer would upgrade it 👇
+
+FROM eclipse-temurin:17-jre-alpine
+
+# 1️⃣ Create non-root user (security best practice)
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# 2️⃣ Copy only jar (layer optimization)
+COPY target/bing-api.jar app.jar
+
+# 3️⃣ Change ownership
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+# 4️⃣ App port
+EXPOSE 8096
+
+# 5️⃣ JVM tuning + container awareness
+ENV JAVA_OPTS="\
+ -XX:+UseContainerSupport \
+ -XX:MaxRAMPercentage=75 \
+ -XX:+ExitOnOutOfMemoryError \
+ -Djava.security.egd=file:/dev/./urandom"
+
+# 6️⃣ Graceful shutdown (SIGTERM support)
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+3️⃣ What DevOps changed & WHY (very important)
+🔐 Security
+Change	Why
+Non-root user	If container hacked → no root access
+Alpine base	Smaller attack surface
+⚙️ Performance & Stability
+JVM Option	Purpose
+UseContainerSupport	JVM reads container memory limits
+MaxRAMPercentage=75	Prevent OOM in Kubernetes
+ExitOnOutOfMemoryError	Pod restarts cleanly
+egd=file:/dev/./urandom	Faster startup
+🧠 Production Readiness
+Feature	Benefit
+Graceful shutdown	Works with AKS / App Service
+Layer optimization	Faster builds
+ENV-based config	Same image for all environments
+4️⃣ OPTIONAL – Multi-Stage Build (DevOps favorite 💙)
+
+If developers build JAR locally, above is enough.
+If CI builds JAR, DevOps prefers multi-stage build 👇
+
+# ---------- BUILD STAGE ----------
+FROM eclipse-temurin:17-jdk-alpine AS builder
+WORKDIR /build
+COPY . .
+RUN ./mvnw clean package -DskipTests
+
+# ---------- RUNTIME STAGE ----------
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+WORKDIR /app
+
+COPY --from=builder /build/target/bing-api.jar app.jar
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+EXPOSE 8096
+
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+🎯 Why multi-stage?
+
+Build tools not shipped to production
+
+Image size ↓ 40–60%
+
+Cleaner & safer
+
+5️⃣ Real-world mapping (Azure context)
+Platform	This Dockerfile works?
+Azure App Service (Container)	✅ Yes
+Azure Container Apps	✅ Yes
+AKS	✅ Best choice
+ACR	✅ Push-ready
+6️⃣ TL;DR (Interview-ready answer 😎)
+
+Developer Dockerfile = “App runs”
+DevOps Dockerfile = “Secure, scalable, observable, production-safe”
+
+If you want, next I can:
+
+🔹 Add HEALTHCHECK
+
+🔹 Show AKS-ready version
+
+🔹 Plug this into Azure DevOps CI/CD
+
+🔹 Compare App Service vs Container Apps vs AKS for this image
+
+Bol, next kya chahiye? 💪🚀
+
+add HEALTHCHECK
+
+🔹 Show AKS-ready version
+
+🔹 Plug this into Azure DevOps CI/CD
+
+🔹 Compare App Service vs Container Apps vs AKS for this image
+
+
+give all 4 different docker file
+
+
+
+Perfect 👍
+Main 4 alag-alag Dockerfiles dunga — copy-paste ready, production-grade — aur saath me kab kaunsa use karna hai bhi clear ho jaayega.
+
+1️⃣ Dockerfile – with HEALTHCHECK (Generic / Base)
+
+👉 Use when:
+
+App Service (Container)
+
+Container Apps
+
+AKS (basic)
+
+FROM eclipse-temurin:17-jre-alpine
+
+# Security: non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+COPY target/bing-api.jar app.jar
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+EXPOSE 8096
+
+ENV JAVA_OPTS="\
+ -XX:+UseContainerSupport \
+ -XX:MaxRAMPercentage=75 \
+ -XX:+ExitOnOutOfMemoryError"
+
+# Health endpoint (Spring Boot Actuator assumed)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://localhost:8096/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+
+✔ Platform-level health monitoring
+✔ Restart if app unhealthy
+
+2️⃣ Dockerfile – AKS-READY (Production Kubernetes) ⭐
+
+👉 Use when:
+
+AKS
+
+Helm / Kubernetes deployment
+
+HPA + probes required
+
+💡 AKS me HEALTHCHECK kam use hota hai, instead liveness/readiness probes Kubernetes handle karta hai.
+
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+COPY target/bing-api.jar app.jar
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+EXPOSE 8096
+
+ENV JAVA_OPTS="\
+ -XX:+UseContainerSupport \
+ -XX:InitialRAMPercentage=50 \
+ -XX:MaxRAMPercentage=75 \
+ -XX:+ExitOnOutOfMemoryError \
+ -Dserver.shutdown=graceful"
+
+# AKS prefers signal handling
+STOPSIGNAL SIGTERM
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+AKS YAML (important 👇)
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8096
+  initialDelaySeconds: 60
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8096
+  initialDelaySeconds: 30
+  periodSeconds: 5
+
+
+✔ Best for scaling
+✔ Zero-downtime rolling updates
+✔ Works with HPA
+
+3️⃣ Dockerfile – Azure DevOps CI/CD Optimized (Multi-Stage) 🚀
+
+👉 Use when:
+
+Azure DevOps pipeline builds JAR
+
+Clean + small image
+
+Enterprise CI/CD
+
+# ---------- BUILD STAGE ----------
+FROM eclipse-temurin:17-jdk-alpine AS builder
+WORKDIR /build
+COPY . .
+RUN ./mvnw clean package -DskipTests
+
+# ---------- RUNTIME STAGE ----------
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+COPY --from=builder /build/target/bing-api.jar app.jar
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+EXPOSE 8096
+
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
+
+HEALTHCHECK --interval=30s --timeout=5s \
+ CMD wget -qO- http://localhost:8096/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+
+✔ CI builds inside container
+✔ No Maven/JDK in prod image
+✔ Smaller ACR image
+
+Azure DevOps pipeline snippet (ACR push)
+- task: Docker@2
+  inputs:
+    containerRegistry: 'acr-service-connection'
+    repository: 'bing-api'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: |
+      $(Build.BuildId)
+      latest
+
+4️⃣ Dockerfile – Azure Container Apps / App Service (Optimized)
+
+👉 Use when:
+
+Azure Container Apps
+
+Azure App Service (Linux Container)
+
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+COPY target/bing-api.jar app.jar
+
+EXPOSE 8096
+
+ENV JAVA_OPTS="\
+ -XX:+UseContainerSupport \
+ -XX:MaxRAMPercentage=70 \
+ -Dserver.port=8096"
+
+HEALTHCHECK --interval=30s --timeout=5s \
+ CMD wget -qO- http://localhost:8096/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+
+✔ Simpler
+✔ Platform handles scaling
+✔ Minimal config
+
+🔥 Final Comparison – App Service vs Container Apps vs AKS
+Feature	App Service	Container Apps	AKS
+Infra mgmt	Fully managed	Fully managed	You manage
+Scaling	Basic	KEDA event-based	HPA / KEDA
+Microservices	❌ Limited	✅ Excellent	✅ Best
+Networking	Simple	Internal env	Full control
+Best for	Lift & shift	Cloud-native	Enterprise scale
+🧠 Interview Golden Line (use this 😎)
+
+Same Docker image, different platforms — but DevOps optimizes Dockerfile based on runtime, scaling, and orchestration needs.
