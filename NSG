@@ -1,0 +1,338 @@
+# Azure Load Balancer + NSG Flow Explained (Hinglish)
+
+# Scenario
+
+Environment:
+
+* Public DNS:
+
+  * `erp.******.in`
+* Public IP attached to Azure Load Balancer:
+
+  * `4.***.***.***`
+* Backend VM:
+
+  * `10.0.*.*`
+* Load Balancer:
+
+  * Standard SKU
+* Protocol:
+
+  * HTTPS (443)
+
+---
+
+# Actual Traffic Flow
+
+```text
+Internet User
+   ↓
+erp.spinfra.in
+   ↓
+Public IP
+4.***.***.***
+   ↓
+Azure Load Balancer
+   ↓
+Backend VM
+10.0.*.*:443
+```
+
+---
+
+# Biggest Confusion
+
+Question:
+
+```text
+Agar sara traffic Public IP → Load Balancer par aa raha hai,
+then NSG me:
+
+1. AzureLoadBalancer allow kyu?
+2. Any/Internet allow kyu?
+```
+
+---
+
+# Important Concept
+
+Azure Load Balancer me 2 alag types ka traffic hota hai:
+
+| Traffic Type         | Source in NSG     |
+| -------------------- | ----------------- |
+| Real User Traffic    | Internet / Any    |
+| Health Probe Traffic | AzureLoadBalancer |
+
+---
+
+# 1. Real User Traffic
+
+Example:
+
+User browser me open karta hai:
+
+```text
+https://erp.spinfra.in
+```
+
+Flow:
+
+```text
+Laptop
+   ↓
+Internet
+   ↓
+Azure LB Public IP
+   ↓
+Backend VM
+```
+
+NSG ko source dikhega:
+
+```text
+Internet
+```
+
+NOT:
+
+```text
+AzureLoadBalancer
+```
+
+Isliye ye rule mandatory hai:
+
+| Priority | Source | Port | Action |
+| -------- | ------ | ---- | ------ |
+| 130      | Any    | 443  | Allow  |
+
+Example:
+
+```text
+allow-https-any
+```
+
+---
+
+# 2. Health Probe Traffic
+
+Azure Load Balancer continuously check karta hai:
+
+```text
+"Backend VM healthy hai ya nahi?"
+```
+
+Ye traffic Azure infrastructure bhejta hai.
+
+Flow:
+
+```text
+Azure Load Balancer Probe
+   ↓
+Backend VM:443
+```
+
+NSG source dikhega:
+
+```text
+AzureLoadBalancer
+```
+
+Isliye ye rule bhi mandatory hai:
+
+| Priority | Source            | Port | Action |
+| -------- | ----------------- | ---- | ------ |
+| 120      | AzureLoadBalancer | 443  | Allow  |
+
+Example:
+
+```text
+allow-https-from-loadbalancer
+```
+
+---
+
+# What Happens If Only AzureLoadBalancer Rule Exists?
+
+## Result
+
+```text
+Health probe works
+Backend healthy dikhega
+```
+
+BUT:
+
+```text
+Real users blocked ho jayenge
+```
+
+Browser error:
+
+```text
+ERR_CONNECTION_TIMED_OUT
+```
+
+Exactly ye production issue tha.
+
+---
+
+# What Happens If Only Any Rule Exists?
+
+## Result
+
+Public users may work.
+
+BUT:
+
+```text
+Health probe fail ho sakta hai
+Backend unhealthy ho sakta hai
+```
+
+Especially in Standard SKU Load Balancer.
+
+---
+
+# Correct Production Architecture
+
+Both rules required:
+
+| Rule                    | Purpose             |
+| ----------------------- | ------------------- |
+| AzureLoadBalancer → 443 | Health Probe        |
+| Any → 443               | Public User Traffic |
+
+---
+
+# Recommended NSG Rules
+
+| Priority | Rule Name                     | Source            | Port | Purpose             |
+| -------- | ----------------------------- | ----------------- | ---- | ------------------- |
+| 100      | allow-ssh-admin               | 10.0.*.*/24       | 22   | SSH from Jump VM    |
+| 120      | allow-https-from-loadbalancer | AzureLoadBalancer | 443  | LB Health Probe     |
+| 130      | allow-https-any               | Any               | 443  | Public HTTPS Access |
+| 4000     | deny-ssh-internet             | Any               | 22   | Block Public SSH    |
+
+---
+
+# Why Azure Standard Load Balancer Confuses People
+
+Because Standard SKU Load Balancer is:
+
+```text
+Secure by Default
+```
+
+Meaning:
+
+Even if:
+
+* Public IP exists
+* Load Balancer exists
+* Backend healthy exists
+
+Traffic still blocked rahega unless NSG explicitly allow kare.
+
+---
+
+# Important Learning
+
+## AzureLoadBalancer Source Means
+
+```text
+Azure infrastructure internal traffic
+```
+
+NOT public internet users.
+
+---
+
+# Easy Real-Life Analogy
+
+Suppose:
+
+```text
+Load Balancer = Hotel Reception
+Backend VM = Hotel Room
+```
+
+## Public User Traffic
+
+Guest enters hotel:
+
+```text
+Guest
+   ↓
+Reception
+   ↓
+Room
+```
+
+Need:
+
+```text
+Public Entry Allowed
+```
+
+---
+
+## Health Probe Traffic
+
+Hotel management checks:
+
+```text
+"Room operational hai ya nahi?"
+```
+
+This is internal staff traffic.
+
+Need separate permission.
+
+---
+
+# Final Production Flow
+
+```text
+Internet User
+   ↓
+Public IP
+   ↓
+Azure Load Balancer
+   ↓
+Health Probe Checks Backend
+   ↓
+Backend VM
+```
+
+NSG allows:
+
+```text
+1. AzureLoadBalancer → 443
+2. Any → 443
+```
+
+Both are required.
+
+---
+
+# Final Key Takeaway
+
+| Rule                    | Needed? | Why                 |
+| ----------------------- | ------- | ------------------- |
+| AzureLoadBalancer → 443 | YES     | Health probe        |
+| Any → 443               | YES     | Real internet users |
+| SSH from Internet       | NO      | Security risk       |
+
+---
+
+# Best Practice
+
+Always:
+
+* Allow only required ports publicly
+* Keep SSH/RDP private
+* Use Jump VM/Bastion for administration
+* Use Standard SKU Load Balancer
+* Use NSGs as primary security layer
+
+This is enterprise-grade Azure production architecture.
